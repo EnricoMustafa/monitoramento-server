@@ -5,12 +5,12 @@ import platform
 import time
 import smtplib
 from email.mime.text import MIMEText
+import matplotlib.pyplot as plt
 
 # Configurações de e-mail
-EMAIL_REMETENTE = ""
-EMAIL_SENHA = ""
-EMAIL_DESTINATARIO = ""
-
+EMAIL_REMETENTE = "enricobrasil123@gmail.com"
+EMAIL_SENHA = "cyloda123"
+EMAIL_DESTINATARIO = "enricobrasil123@gmail.com"
 
 def enviar_email(host, status):
     assunto = f"[ALERTA] {host} está {status}"
@@ -31,7 +31,6 @@ def enviar_email(host, status):
     except Exception as e:
         print(f"Erro ao enviar email: {e}")
 
-
 def verificar_disponibilidade(host):
     sistema = platform.system()
 
@@ -47,7 +46,6 @@ def verificar_disponibilidade(host):
     if status == "OFFLINE":
         enviar_email(host, status)
 
-
 def salvar_log(host, status):
     arquivo_existe = os.path.isfile("log_monitoramento.csv")
     with open("log_monitoramento.csv", "a", newline="") as arquivo:
@@ -56,6 +54,28 @@ def salvar_log(host, status):
             writer.writerow(["Data/Hora", "Host", "Status"])
         writer.writerow([datetime.now(), host, status])
 
+def gerar_grafico():
+    hosts = {}
+    with open("log_monitoramento.csv", "r") as arquivo:
+        reader = csv.reader(arquivo)
+        next(reader)  # Pula o cabeçalho
+        for linha in reader:
+            host = linha[1]
+            status = linha[2]
+            if host not in hosts:
+                hosts[host] = {"ONLINE": 0, "OFFLINE": 0}
+            hosts[host][status] += 1
+
+    for host, status in hosts.items():
+        labels = ["ONLINE", "OFFLINE"]
+        valores = [status["ONLINE"], status["OFFLINE"]]
+        plt.figure()
+        plt.bar(labels, valores, color=["green", "red"])
+        plt.title(f"Status de {host}")
+        plt.xlabel("Status")
+        plt.ylabel("Quantidade")
+        plt.savefig(f"grafico_{host}.png")
+        print(f"Gráfico gerado para {host}")
 
 # Lista de ativos para monitoramento
 ativos = ["google.com", "github.com", "8.8.8.8"]
@@ -64,5 +84,6 @@ print("Iniciando Monitoramento de Ativos de TI")
 while True:
     for ativo in ativos:
         verificar_disponibilidade(ativo)
+    gerar_grafico()
     print("Aguardando 60 segundos para nova verificação...\n")
     time.sleep(60)
